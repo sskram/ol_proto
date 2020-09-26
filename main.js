@@ -6,6 +6,9 @@ import Zoomify from 'ol/source/Zoomify';
 import Draw from 'ol/interaction/Draw';
 import  VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
+import MousePosition from 'ol/control/MousePosition';
+import {createStringXY} from 'ol/coordinate';
+import DragPan from 'ol/interaction/DragPan';
 
 var imgWidth = 4000;
 var imgHeight = 3000;
@@ -20,17 +23,8 @@ var source = new Zoomify({
 });
 var extent = source.getTileGrid().getExtent();
 
-// var retinaPixelRatio = 2;
-// var retinaSource = new Zoomify({
-//   url: zoomifyUrl,
-//   size: [imgWidth, imgHeight],
-//   crossOrigin: 'anonymous',
-//   zDirection: -1, // Ensure we get a tile with the screen resolution or higher
-//   tilePixelRatio: retinaPixelRatio, // Display retina tiles
-//   tileSize: 256 / retinaPixelRatio, // from a higher zoom level
-// });
 
-var layer = new TileLayer({
+var imagery = new TileLayer({
   source: source,
 });
 
@@ -38,12 +32,13 @@ var vector = new VectorLayer({
   source: new VectorSource({wrapX: false}),
 });
 
+
 var map = new Map({
-  layers: [layer,vector],
+  layers: [imagery,vector],
   target: 'map',
   view: new View({
     // adjust zoom levels to those provided by the source
-    resolutions: layer.getSource().getTileGrid().getResolutions(),
+    resolutions: imagery.getSource().getTileGrid().getResolutions(),
     // constrain the center: center cannot be set outside this extent
     extent: extent,
     constrainOnlyCenter: true,
@@ -51,24 +46,82 @@ var map = new Map({
 });
 map.getView().fit(extent);
 
-var control = document.getElementById('dd_interaction');
 
-var draw;
-control.addEventListener('change', function (event) {
+
+var stringifyFunc = createStringXY(4);
+
+var mousepos = new MousePosition( {
+  coordinateFormat: stringifyFunc,
+  projection: map.getView().getProjection(),  
+  target: 'mouse-position',
+  undefinedHTML: '-position-'
+});
+
+map.addControl(mousepos);
+
+var dropdown = document.getElementById('dd_interaction');
+
+var drawinteraction = new Draw({
+  source: vector.getSource(),
+  type: "Polygon",
+});
+map.addInteraction(drawinteraction);
+drawinteraction.setActive(false);
+
+var paninteraction;
+map.getInteractions().forEach(function(intr,idx,all) {
+  if (intr instanceof DragPan) {
+    intr.setActive(false);
+    paninteraction = intr;
+  }
+});
+
+dropdown.addEventListener('change', function (event) {
   var value = event.currentTarget.value;
   if (value == "polygon") {
-    draw = new Draw({
-      source: vector.getSource(),
-      type: "Polygon",
-    });
-    map.addInteraction(draw);
+    drawinteraction.setActive(true);
+    paninteraction.setActive(false);
+  }
+  else if(value=="pan"){
+    drawinteraction.setActive(false);
+    paninteraction.setActive(true);
   }
   else {
-    map.removeInteraction(draw);
+    //paint
+    drawinteraction.setActive(false);
+    paninteraction.setActive(false);
+    
   }
-  // if (value === 'zoomify') {
-  //   layer.setSource(source);
-  // } else if (value === 'zoomifyretina') {
-  //   layer.setSource(retinaSource);
-  // }
+
+});
+
+imagery.on('postrender', function (event) {
+  
+  var context = event.context;
+  var width = context.canvas.width;
+  var height = context.canvas.height;
+
+  var inputData = context.getImageData(0, 0, width, height).data;
+
+  var output = context.createImageData(width, height);
+  var outputData = output.data;
+  for (var pixelY = 0; pixelY < height; ++pixelY) {
+    for (var pixelX = 0; pixelX < width; ++pixelX) {
+      var inputIndex = (pixelY * width + pixelX) * 4;
+       var rgba = inputData.slice(inputIndex,inputIndex+4);
+        var  r = inputData[inputIndex];
+        var  g = inputData[inputIndex + 1];
+        var  b = inputData[inputIndex + 2];
+        var  a = inputData[inputIndex + 3];
+          if (r>g) {
+            outputData[inputIndex]=0;
+          }
+          else {
+            for(var ci=0;ci<4;ci++) {
+              outputData[inputIndex+ci]=inputData[inputIndex+ci];
+            }
+          }
+        }
+      }
+      context.putImageData(output, 0, 0);
 });
