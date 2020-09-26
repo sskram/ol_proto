@@ -1,0 +1,14 @@
+{
+  "name": "zoomify",
+  "dependencies": {
+    "ol": "^6.4.3",
+    "parcel-bundler": "^1.12.4"
+  },
+  "devDependencies": {
+    "parcel": "1.11.0"
+  },
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build --experimental-scope-hoisting --public-url . index.html"
+  }
+}
