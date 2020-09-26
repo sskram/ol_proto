@@ -87,17 +87,26 @@ dropdown.addEventListener('change', function (event) {
     paninteraction.setActive(true);
   }
   else {
-    //paint
+    
     drawinteraction.setActive(false);
     paninteraction.setActive(false);
-    
+    //set flags for paint
   }
 
 });
 
+map.on('click', function(event) {
+  //if paint flag ...
+  var pix = event.pixel;
+  imagerycontext.fillStyle='blue';
+  imagerycontext.fillRect(pix[0],pix[1],10,10);
+});
+
+var imagerycontext;
 imagery.on('postrender', function (event) {
   
   var context = event.context;
+  imagerycontext = context;
   var width = context.canvas.width;
   var height = context.canvas.height;
 
