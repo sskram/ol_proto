@@ -91,6 +91,9 @@ dropdown.addEventListener('change', function (event) {
     drawinteraction.setActive(false);
     paninteraction.setActive(false);
     //set flags for paint
+    if(value=="threshold") {
+      thresholdred(imagerycontext);
+    }
   }
 
 });
@@ -104,9 +107,11 @@ map.on('click', function(event) {
 
 var imagerycontext;
 imagery.on('postrender', function (event) {
-  
-  var context = event.context;
-  imagerycontext = context;
+  // var context = event.context;
+  imagerycontext = event.context;  
+});
+
+function thresholdred(context) {
   var width = context.canvas.width;
   var height = context.canvas.height;
 
@@ -117,20 +122,20 @@ imagery.on('postrender', function (event) {
   for (var pixelY = 0; pixelY < height; ++pixelY) {
     for (var pixelX = 0; pixelX < width; ++pixelX) {
       var inputIndex = (pixelY * width + pixelX) * 4;
-       var rgba = inputData.slice(inputIndex,inputIndex+4);
+      //  var rgba = inputData.slice(inputIndex,inputIndex+4);
         var  r = inputData[inputIndex];
         var  g = inputData[inputIndex + 1];
         var  b = inputData[inputIndex + 2];
         var  a = inputData[inputIndex + 3];
-          if (r>g) {
-            outputData[inputIndex]=0;
-          }
-          else {
-            for(var ci=0;ci<4;ci++) {
-              outputData[inputIndex+ci]=inputData[inputIndex+ci];
-            }
+        if (r>g) {
+          outputData[inputIndex]=0;
+        }
+        else {
+          for(var ci=0;ci<4;ci++) {
+            outputData[inputIndex+ci]=inputData[inputIndex+ci];
           }
         }
       }
-      context.putImageData(output, 0, 0);
-});
+    }
+    context.putImageData(output, 0, 0);
+}
