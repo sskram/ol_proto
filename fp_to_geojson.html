@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <!-- <script src="https://docs.opencv.org/4.4.0/opencv.js"></script> -->
+      <script src="opencv.js"></script>
+      <script src="topojson.js"></script>
+      <script src="turf.min.js"></script>
+      <script>
+        function show_color_at(x,y,ctx) {
+            let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let pix = y*canvas.width + x;
+            let rgba = imgData.data.slice(pix*4,(pix+1)*4);
+            let pos = [x,y];
+            let valstr = pos+'<br>'+rgba; 
+            document.getElementById('pixinfo').innerHTML=valstr;
+        }
+
+        function firstpass_to_contours(ctx,color) {
+            let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let src = cv.matFromImageData(imgData);
+            //https://docs.opencv.org/4.4.0/de/d06/tutorial_js_basic_ops.html
+            let rgbaPlanes = new cv.MatVector();
+            // Split the Mat
+            cv.split(src, rgbaPlanes);
+            // Get R channel
+            let R = rgbaPlanes.get(0);
+            let G = rgbaPlanes.get(1);
+            let B = rgbaPlanes.get(2);
+            //https://docs.opencv.org/4.4.0/dd/d4d/tutorial_js_image_arithmetics.html
+
+            // cv.imshow('canvasOutput', B);
+
+            cv.threshold(R, R, parseInt(color[0]-1), 255, cv.THRESH_BINARY);
+            cv.threshold(G, G, parseInt(color[1]-1), 255, cv.THRESH_BINARY);
+            cv.threshold(B, B, parseInt(color[2]-1), 255, cv.THRESH_BINARY);
+
+            let mask = new cv.Mat();
+            cv.bitwise_and(R, G, mask);
+            cv.bitwise_and(mask, B, mask);
+
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            // You can try more different parameters
+            cv.findContours(mask, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+            
+            let dst = cv.Mat.zeros(src.cols, src.rows, cv.CV_8UC3);
+            
+            let outlinecolor = new cv.Scalar(255,255,255);
+            let polygons = [];
+            for(let i = 0; i < contours.size(); ++i) {
+                
+                cv.drawContours(dst, contours, i, outlinecolor);
+                
+                polygons.push(extract_polygon(contours.get(i))); //TODO: also send hierarchy info
+            }
+            cv.imshow('canvasOutput', dst);
+            delete rgbaPlanes;
+            delete mask;
+            delete contours;
+            delete hierarchy;
+
+            return polygons;
+        }
+
+        function extract_polygon(ci) {
+            let poly = [];
+            for(let pi = 0; pi<ci.rows; ++pi) {
+                pt = ci.intPtr(pi);
+                poly.push([pt[0],pt[1]]);
+            }
+            poly.push(poly[0]);
+            return poly;
+        }
+
+        function poly_to_geojson(poly,color) {
+            return turf.polygon([poly],{'color':color}); //FIXME: add more region properties
+        }
+
+        function geo_to_topo(geojson) {
+            return topojson.topology(geojson);
+        }
+        </script>
+  </head>
+  <body>
+      <canvas id="inputCanvas" style='border:solid 1px'></canvas>
+      
+      <select id="dd_interaction">
+        <option value="None">None</option>
+        <option value="start">start</option>
+      </select>
+    <canvas id="canvasOutput"></canvas>
+    <div style="clear:both" id="pixinfo">
+    </div>
+    <script>
+        // var canvas = document.createElement('canvas');
+        var canvas = document.getElementById('inputCanvas');
+        canvas.width = 200;
+        canvas.height = 200;        
+
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(10, 10, 100, 100);
+
+        ctx.fillStyle = 'red';
+        ctx.fillRect(10,50,20,20);
+
+        ctx.fillStyle = 'green';
+        ctx.fillRect(30,50,10,10);
+
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(41,50, 10,50 );
+
+        var colors = [[0,128,0],[0,0,255],[255,0,0],[255,255,0]];
+
+        var dropdown = document.getElementById('dd_interaction');
+        dropdown.addEventListener('change', function (event) {
+            var value = event.currentTarget.value;
+            if (value == "start") {
+                gjarray = [];
+                colors.forEach(function(color){
+                    let polygons = firstpass_to_contours(ctx,color);
+                    polygons.forEach(function(poly){
+                        gjarray.push(poly_to_geojson(poly,color));
+                    })
+                });
+                topoarray = geo_to_topo(gjarray);                
+            }
+        });
+        
+        canvas.onmousemove = function(evt) {
+            var x = evt.pageX - this.offsetLeft;
+            var y = evt.pageY - this.offsetTop;
+            show_color_at(x,y,ctx);
+        };
+    </script>
+  </body>
+</html>
