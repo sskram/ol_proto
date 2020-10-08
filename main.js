@@ -55,6 +55,10 @@ let projection = new Projection({
    extent: source.getTileGrid().getExtent(),
 });
 
+//https://stackoverflow.com/questions/49169150/creating-custom-canvas-on-top-of-openlayers-map
+//static canvas image - https://gist.github.com/mzur/d0ca83858c0f4e3bae807e1857801621
+//Overlay -- https://stackoverflow.com/questions/33824105/openlayers3-more-than-one-overlay-at-a-time
+
 var static_layer =new ImageLayer({
   source: new ImageSource({
     canvas: canvas,
@@ -138,7 +142,11 @@ map.on('click', function(event) {
   ctx.fillStyle='blue';
   console.log(pix[0],pix[1])
   ctx.fillRect(pix[0],pix[1],10,10);
-  ctx.stroke();
+
+  var sor = static_layer.getSource();
+  sor.image_.canvas_ = canvas;
+  //console.log(static_layer,static_layer.getSource(),sor.image_.canvas_)
+  static_layer.setSource(sor);
 });
 
 var imagerycontext;
