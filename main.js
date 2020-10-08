@@ -139,20 +139,27 @@ map.on('click', function(event) {
   
   imagerycontext.fillStyle='blue';
   imagerycontext.fillRect(pix[0],pix[1],10,10);
-  ctx.fillStyle='blue';
+
+  var coords = event.coordinate;
+  coords[0] = Math.round(coords[0]);
+  coords[1] = Math.round(coords[1]);
+  coords[1] = Math.abs(coords[1]);
+
+  ctx.fillStyle='red';
   console.log(pix[0],pix[1])
-  ctx.fillRect(pix[0],pix[1],10,10);
+  ctx.fillRect(coords[0],coords[1],50,50);
 
   var sor = static_layer.getSource();
   sor.image_.canvas_ = canvas;
-  //console.log(static_layer,static_layer.getSource(),sor.image_.canvas_)
-  //static_layer.setSource(sor);
-  var k = new ImageSource({
+
+  var static_source = new ImageSource({
     canvas: canvas,
     projection: projection,
     imageExtent: source.getTileGrid().getExtent(),
   });
-  console.log(static_layer.setSource(k));
+  console.log(coords);
+  static_layer.setSource(static_source);
+
 });
 
 var imagerycontext;
