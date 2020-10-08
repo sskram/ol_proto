@@ -39,7 +39,7 @@ var vector = new VectorLayer({
 });
 
 
-var  canvas = document.createElement('canvas');
+var canvas = document.createElement('canvas');
 // Set dimensions of image.
 canvas.width = imgWidth;
 canvas.height = imgHeight;
@@ -146,7 +146,13 @@ map.on('click', function(event) {
   var sor = static_layer.getSource();
   sor.image_.canvas_ = canvas;
   //console.log(static_layer,static_layer.getSource(),sor.image_.canvas_)
-  static_layer.setSource(sor);
+  //static_layer.setSource(sor);
+  var k = new ImageSource({
+    canvas: canvas,
+    projection: projection,
+    imageExtent: source.getTileGrid().getExtent(),
+  });
+  console.log(static_layer.setSource(k));
 });
 
 var imagerycontext;
