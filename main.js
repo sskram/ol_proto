@@ -1,11 +1,17 @@
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import TileLayer from 'ol/layer/Tile';
+import Image from 'ol/layer/Image'
 import View from 'ol/View';
 import Zoomify from 'ol/source/Zoomify';
 import Draw from 'ol/interaction/Draw';
 import  VectorSource from 'ol/source/Vector';
+import Static from 'ol/source/ImageStatic';
+import ImageLayer from 'ol/layer/Image';
+import ImageSource from './ImageCanvas.js';
+import Projection from 'ol/proj/Projection';  
 import VectorLayer from 'ol/layer/Vector';
+import ImageCanvasSource from 'ol/source/ImageCanvas';
 import MousePosition from 'ol/control/MousePosition';
 import {createStringXY} from 'ol/coordinate';
 import DragPan from 'ol/interaction/DragPan';
@@ -33,8 +39,33 @@ var vector = new VectorLayer({
 });
 
 
+var  canvas = document.createElement('canvas');
+// Set dimensions of image.
+canvas.width = imgWidth;
+canvas.height = imgHeight;
+var ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 100, 100);
+ctx.fillRect(3500, 2900,100,100);
+
+let extent_1 = [0, -canvas.width, canvas.height ,0];
+let projection = new Projection({
+   code: 'OVERLAY',
+   units: 'pixels',
+   extent: source.getTileGrid().getExtent(),
+});
+
+var static_layer =new ImageLayer({
+  source: new ImageSource({
+    canvas: canvas,
+    projection: projection,
+    imageExtent: source.getTileGrid().getExtent(),
+  }),
+});
+
+
 var map = new Map({
-  layers: [imagery,vector],
+  layers: [imagery,vector,static_layer],
   target: 'map',
   view: new View({
     // adjust zoom levels to those provided by the source
@@ -45,7 +76,7 @@ var map = new Map({
   }),
 });
 map.getView().fit(extent);
-
+static_layer.setZIndex(1001);
 
 
 var stringifyFunc = createStringXY(4);
@@ -101,8 +132,13 @@ dropdown.addEventListener('change', function (event) {
 map.on('click', function(event) {
   //if paint flag ...
   var pix = event.pixel;
+  
   imagerycontext.fillStyle='blue';
   imagerycontext.fillRect(pix[0],pix[1],10,10);
+  ctx.fillStyle='blue';
+  console.log(pix[0],pix[1])
+  ctx.fillRect(pix[0],pix[1],10,10);
+  ctx.stroke();
 });
 
 var imagerycontext;
