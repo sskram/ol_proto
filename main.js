@@ -1,6 +1,8 @@
 import 'ol/ol.css';
+import ol from 'ol';
 import Map from 'ol/Map';
 import TileLayer from 'ol/layer/Tile';
+import TileGrid from 'ol/tilegrid/TileGrid';
 import Image from 'ol/layer/Image'
 import View from 'ol/View';
 import Zoomify from 'ol/source/Zoomify';
@@ -16,25 +18,26 @@ import MousePosition from 'ol/control/MousePosition';
 import {createStringXY} from 'ol/coordinate';
 import DragPan from 'ol/interaction/DragPan';
 
-//var imgWidth = 30000;
-//var imgHeight = 30000;
-var imgWidth = 4000;
-var imgHeight = 3000;
-//var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?zoomify=/HUA_180830/StitchedImage_Z139_L001_test.jp2/';
-var zoomifyUrl = 'https://ol-zoomify.surge.sh/zoomify/';
+var imgWidth = 12000;
+var imgHeight = 12000;
+//iipbase = "http://braincircuits.org/cgi-bin";
+//sectionaccessurl = 'http://mitradevel.cshl.org/webtools/seriesbrowser/getsectionjp2path/'+sectionid;
+var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?FIF=/imagedata/PMD2057/PMD2057%262056-F9-2015.03.06-17.55.48_PMD2057_1_0025.jp2&GAM=1&MINMAX=1:0,255&MINMAX=2:0,255&MINMAX=3:0,255&JTL={z},{tileIndex}';
+//var zoomifyUrl = 'https://ol-zoomify.surge.sh/zoomify/';
+
 var proj = new Projection({
   code: 'ZOOMIFY',
   units: 'pixels',
   extent: [0, 0, imgWidth, imgHeight]
 });
+
 var source = new Zoomify({
   url: zoomifyUrl,
-  size: [imgWidth, imgHeight],
-  tileOptions: {crossOriginKeyword: 'anonymous'},
+  size: [imgWidth, imgHeight],crossOrigin: 'anonymous',
   zDirection: -1, // Ensure we get a tile with the screen resolution or higher
 });
 var extent = source.getTileGrid().getExtent();
-
+//source.setTileGridForProjection(proj, tilegrid);
 
 var imagery = new TileLayer({
   source: source,
@@ -51,7 +54,8 @@ canvas.width = imgWidth;
 canvas.height = imgHeight;
 var ctx = canvas.getContext('2d');
 ctx.fillStyle = 'red';
-
+//ctx.fillRect(0,0,1000,1000);
+console.log(canvas.width,canvas.height)
 let extent_1 = [0, -canvas.width, canvas.height ,0];
 let projection = new Projection({
    code: 'OVERLAY',
@@ -160,7 +164,7 @@ map.on('click', function(event) {
     var pix = event.pixel;
   
     //imagerycontext.fillStyle='blue';
-    //imagerycontext.fillRect(pix[0],pix[1],10,10);
+    //imagerycontext.fillRect(pix[0],pix[1],1000,1000);
 
     var coords = get_points(event.coordinate);
     //coords[0] = Math.round(coords[0]);
