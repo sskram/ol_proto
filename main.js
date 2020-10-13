@@ -16,15 +16,21 @@ import MousePosition from 'ol/control/MousePosition';
 import {createStringXY} from 'ol/coordinate';
 import DragPan from 'ol/interaction/DragPan';
 
+//var imgWidth = 30000;
+//var imgHeight = 30000;
 var imgWidth = 4000;
 var imgHeight = 3000;
-
+//var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?zoomify=/HUA_180830/StitchedImage_Z139_L001_test.jp2/';
 var zoomifyUrl = 'https://ol-zoomify.surge.sh/zoomify/';
-
+var proj = new Projection({
+  code: 'ZOOMIFY',
+  units: 'pixels',
+  extent: [0, 0, imgWidth, imgHeight]
+});
 var source = new Zoomify({
   url: zoomifyUrl,
   size: [imgWidth, imgHeight],
-  crossOrigin: 'anonymous',
+  tileOptions: {crossOriginKeyword: 'anonymous'},
   zDirection: -1, // Ensure we get a tile with the screen resolution or higher
 });
 var extent = source.getTileGrid().getExtent();
@@ -38,15 +44,13 @@ var vector = new VectorLayer({
   source: new VectorSource({wrapX: false}),
 });
 
-
+var draw = true;
 var canvas = document.createElement('canvas');
 // Set dimensions of image.
 canvas.width = imgWidth;
 canvas.height = imgHeight;
 var ctx = canvas.getContext('2d');
 ctx.fillStyle = 'red';
-ctx.fillRect(0, 0, 100, 100);
-ctx.fillRect(3500, 2900,100,100);
 
 let extent_1 = [0, -canvas.width, canvas.height ,0];
 let projection = new Projection({
@@ -114,6 +118,7 @@ map.getInteractions().forEach(function(intr,idx,all) {
 dropdown.addEventListener('change', function (event) {
   var value = event.currentTarget.value;
   if (value == "polygon") {
+    draw = false;
     drawinteraction.setActive(true);
     paninteraction.setActive(false);
   }
@@ -129,38 +134,137 @@ dropdown.addEventListener('change', function (event) {
     if(value=="threshold") {
       thresholdred(imagerycontext);
     }
+    if(value=="paint") {
+      draw = true;
+    }
   }
 
 });
 
+
+function get_points(coords){
+  
+  var points = [];
+  
+  points[0] = Math.round(coords[0]);
+  points[1] = Math.round(coords[1]);
+  points[1] = Math.abs(points[1]);
+
+  return points;
+}
+
+
 map.on('click', function(event) {
   //if paint flag ...
-  var pix = event.pixel;
+  if(draw == true){
+    var pix = event.pixel;
   
-  imagerycontext.fillStyle='blue';
-  imagerycontext.fillRect(pix[0],pix[1],10,10);
+    //imagerycontext.fillStyle='blue';
+    //imagerycontext.fillRect(pix[0],pix[1],10,10);
 
-  var coords = event.coordinate;
-  coords[0] = Math.round(coords[0]);
-  coords[1] = Math.round(coords[1]);
-  coords[1] = Math.abs(coords[1]);
+    var coords = get_points(event.coordinate);
+    //coords[0] = Math.round(coords[0]);
+    //coords[1] = Math.round(coords[1]);
+    //coords[1] = Math.abs(coords[1]);
 
-  ctx.fillStyle='red';
-  console.log(pix[0],pix[1])
-  ctx.fillRect(coords[0],coords[1],50,50);
+    ctx.fillStyle='red';
+    //console.log(pix[0],pix[1])
+    ctx.fillRect(coords[0],coords[1],50,50);
 
-  var sor = static_layer.getSource();
-  sor.image_.canvas_ = canvas;
+    var vector_sr = vector.getSource();
+    var features = vector_sr.getFeatures();
+  //console.log(features.length,"d")
 
-  var static_source = new ImageSource({
-    canvas: canvas,
-    projection: projection,
-    imageExtent: source.getTileGrid().getExtent(),
-  });
-  console.log(coords);
-  static_layer.setSource(static_source);
+    var sor = static_layer.getSource();
+    sor.image_.canvas_ = canvas;
+    var static_source = new ImageSource({
+      canvas: canvas,
+      projection: projection,
+      imageExtent: source.getTileGrid().getExtent(),
+    });
+   
+    static_layer.setSource(static_source);
+
+  }
+
 
 });
+
+
+vector.on("prerender",function(event){
+  console.log("ended");
+  var vector_sr = vector.getSource();
+  var features = vector_sr.getFeatures();
+  //console.log(features.length,"d")
+  if(features.length>=1)
+    {   
+        var coord = features[0].values_.geometry.flatCoordinates;
+        var uid = features[0].ol_uid;
+        //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
+
+        var points = [];
+
+        ctx.strokeStyle="red";
+        ctx.lineWidth = 20;
+        ctx.beginPath();
+        
+        for(var i=0;i<coord.length;){
+
+            points = get_points([coord[i],coord[i+1]]);
+            //console.log(points[0],points[1],i);
+            
+            if(i == 0){
+              ctx.moveTo(points[0],points[1]);
+            }
+            if(i<coord.length){
+              
+              ctx.lineTo(points[0],points[1]);
+            }
+
+            i = i+2;
+        }
+        
+        ctx.stroke();
+
+        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+
+        var sor = static_layer.getSource();
+        sor.image_.canvas_ = canvas;
+        var static_source = new ImageSource({
+            canvas: canvas,
+            projection: projection,
+            imageExtent: source.getTileGrid().getExtent(),
+        });
+   
+        static_layer.setSource(static_source);
+
+    }
+});
+
+
+map.on("pointerdrag",function(event){
+  if(draw == true){
+      
+      var pix = event.pixel;
+    
+      var coords = get_points(event.coordinate);
+      ctx.fillRect(coords[0],coords[1],50,50);
+      var sor = static_layer.getSource();
+      sor.image_.canvas_ = canvas;
+
+      var static_source = new ImageSource({
+        canvas: canvas,
+        projection: projection,
+        imageExtent: source.getTileGrid().getExtent(),
+      });
+      //console.log(coords);
+      static_layer.setSource(static_source);
+
+  }
+
+});
+
+
 
 var imagerycontext;
 imagery.on('postrender', function (event) {
