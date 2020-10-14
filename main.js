@@ -32,7 +32,8 @@ var proj = new Projection({
 
 var source = new Zoomify({
   url: zoomifyUrl,
-  size: [imgWidth, imgHeight],crossOrigin: 'anonymous',
+  size: [imgWidth, imgHeight],
+  crossOrigin: 'anonymous',
   zDirection: -1, // Ensure we get a tile with the screen resolution or higher
 });
 var extent = source.getTileGrid().getExtent();
@@ -228,10 +229,15 @@ vector.on("prerender",function(event){
         //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
 
         var points = [];
-        if(features[0].getGeometry().getType()=="Polygon"){
+        if(features[0].getGeometry().getType()=="Polygon" || features[0].getGeometry().getType()=="LineString"){
             
             ctx.strokeStyle="red";
-            ctx.lineWidth = 20;
+            ctx.lineWidth = 5;
+
+            if(features[0].getGeometry().getType()=="LineString"){
+              ctx.strokeStyle="cyan";
+              ctx.lineWidth = 5;
+            }
             ctx.beginPath();
             
             for(var i=0;i<coord.length;){
@@ -252,16 +258,7 @@ vector.on("prerender",function(event){
             
             ctx.stroke();
         }
-        else if(features[0].getGeometry().getType()=="LineString"){
-          //console.log("linestring",features);
-          for(var i=0;i<coord.length;){
-            points = get_points([coord[i],coord[i+1]]);
-            ctx.fillRect(points[0],points[1],5,5);
-            i=i+1;
-          }
-        }
-        
-          
+         
         vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
 
         var sor = static_layer.getSource();
