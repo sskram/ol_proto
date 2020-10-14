@@ -22,9 +22,8 @@ var imgWidth = 12000;
 var imgHeight = 12000;
 //iipbase = "http://braincircuits.org/cgi-bin";
 //sectionaccessurl = 'http://mitradevel.cshl.org/webtools/seriesbrowser/getsectionjp2path/'+sectionid;
-var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?FIF=/imagedata/PMD2057/PMD2057%262056-F9-2015.03.06-17.55.48_PMD2057_1_0025.jp2&GAM=1&MINMAX=1:0,255&MINMAX=2:0,255&MINMAX=3:0,255&JTL={z},{tileIndex}';
+var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?FIF=/PMD2057/PMD2057%262056-F9-2015.03.06-17.55.48_PMD2057_1_0025.jp2&GAM=1&MINMAX=1:0,255&MINMAX=2:0,255&MINMAX=3:0,255&JTL={z},{tileIndex}';
 //var zoomifyUrl = 'https://ol-zoomify.surge.sh/zoomify/';
-
 var proj = new Projection({
   code: 'ZOOMIFY',
   units: 'pixels',
@@ -102,14 +101,26 @@ var mousepos = new MousePosition( {
 
 map.addControl(mousepos);
 
-var dropdown = document.getElementById('dd_interaction');
+var dropdown = document.getElementById('dd_interaction'); 
 
 var drawinteraction = new Draw({
   source: vector.getSource(),
   type: "Polygon",
 });
+
+var lineinteraction = new Draw({
+  source:vector.getSource(),
+  type:"LineString",
+  freehand: true,
+})
+
+
 map.addInteraction(drawinteraction);
+map.addInteraction(lineinteraction);
 drawinteraction.setActive(false);
+lineinteraction.setActive(false);
+
+
 
 var paninteraction;
 map.getInteractions().forEach(function(intr,idx,all) {
@@ -125,15 +136,25 @@ dropdown.addEventListener('change', function (event) {
     draw = false;
     drawinteraction.setActive(true);
     paninteraction.setActive(false);
+    lineinteraction.setActive(false);
   }
   else if(value=="pan"){
+    draw = false;
     drawinteraction.setActive(false);
     paninteraction.setActive(true);
+    lineinteraction.setActive(false);
+  }
+  else if(value=="LineString"){
+    draw = false;
+    drawinteraction.setActive(false);
+    paninteraction.setActive(false);
+    lineinteraction.setActive(true);
   }
   else {
     
     drawinteraction.setActive(false);
     paninteraction.setActive(false);
+    lineinteraction.setActive(false);
     //set flags for paint
     if(value=="threshold") {
       thresholdred(imagerycontext);
@@ -196,10 +217,10 @@ map.on('click', function(event) {
 
 
 vector.on("prerender",function(event){
-  console.log("ended");
+  //console.log("ended");
   var vector_sr = vector.getSource();
   var features = vector_sr.getFeatures();
-  //console.log(features.length,"d")
+  //console.log(,"d")
   if(features.length>=1)
     {   
         var coord = features[0].values_.geometry.flatCoordinates;
@@ -207,29 +228,40 @@ vector.on("prerender",function(event){
         //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
 
         var points = [];
-
-        ctx.strokeStyle="red";
-        ctx.lineWidth = 20;
-        ctx.beginPath();
-        
-        for(var i=0;i<coord.length;){
-
-            points = get_points([coord[i],coord[i+1]]);
-            //console.log(points[0],points[1],i);
+        if(features[0].getGeometry().getType()=="Polygon"){
             
-            if(i == 0){
-              ctx.moveTo(points[0],points[1]);
-            }
-            if(i<coord.length){
-              
-              ctx.lineTo(points[0],points[1]);
-            }
+            ctx.strokeStyle="red";
+            ctx.lineWidth = 20;
+            ctx.beginPath();
+            
+            for(var i=0;i<coord.length;){
 
-            i = i+2;
+                points = get_points([coord[i],coord[i+1]]);
+                //console.log(points[0],points[1],i);
+                
+                if(i == 0){
+                  ctx.moveTo(points[0],points[1]);
+                }
+                if(i<coord.length){
+                  
+                  ctx.lineTo(points[0],points[1]);
+                }
+
+                i = i+2;
+            }
+            
+            ctx.stroke();
+        }
+        else if(features[0].getGeometry().getType()=="LineString"){
+          //console.log("linestring",features);
+          for(var i=0;i<coord.length;){
+            points = get_points([coord[i],coord[i+1]]);
+            ctx.fillRect(points[0],points[1],5,5);
+            i=i+1;
+          }
         }
         
-        ctx.stroke();
-
+          
         vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
 
         var sor = static_layer.getSource();
