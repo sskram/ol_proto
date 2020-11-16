@@ -2,8 +2,7 @@ import 'ol/ol.css';
 import ol from 'ol';
 import Map from 'ol/Map';
 import TileLayer from 'ol/layer/Tile';
-import TileGrid from 'ol/tilegrid/TileGrid';
-import Image from 'ol/layer/Image'
+import GeoJSON from 'ol/format/GeoJSON';
 import View from 'ol/View';
 import Zoomify from 'ol/source/Zoomify';
 import Draw from 'ol/interaction/Draw';
@@ -17,9 +16,12 @@ import ImageCanvasSource from 'ol/source/ImageCanvas';
 import MousePosition from 'ol/control/MousePosition';
 import {createStringXY} from 'ol/coordinate';
 import DragPan from 'ol/interaction/DragPan';
+import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
 
 var imgWidth = 12000;
 var imgHeight = 12000;
+var add = false;
+var erase = false;
 //iipbase = "http://braincircuits.org/cgi-bin";
 //sectionaccessurl = 'http://mitradevel.cshl.org/webtools/seriesbrowser/getsectionjp2path/'+sectionid;
 var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?FIF=/PMD2057/PMD2057%262056-F9-2015.03.06-17.55.48_PMD2057_1_0025.jp2&GAM=1&MINMAX=1:0,255&MINMAX=2:0,255&MINMAX=3:0,255&JTL={z},{tileIndex}';
@@ -115,13 +117,64 @@ var lineinteraction = new Draw({
   freehand: true,
 })
 
+var addPolygonInteraction = new Draw({
+  source: vector.getSource(),
+  type: "Polygon",
+  style:new Style({
+        fill: new Fill({
+          color: 'rgba(0, 255, 0, 0.1)',
+        }),
+        stroke: new Stroke({
+          color: '#28a745',
+          width: 3,
+        }),
+        image: new CircleStyle({
+              radius: 7,
+              fill: new Fill({
+                color: '#28a745'
+              }),
+              stroke: new Stroke({
+                color: 'white',
+                width: 2,
+              }),
+        })
+    })
+});
+
+var erasePolygonInteraction = new Draw({
+  source: vector.getSource(),
+  type: "Polygon",
+  style:new Style({
+        fill: new Fill({
+          color: 'rgba(255, 170, 70, 0.1)',
+        }),
+        stroke: new Stroke({
+          color: '#f0ad4e',
+          width: 3,
+        }),
+        image: new CircleStyle({
+              radius: 7,
+              fill: new Fill({
+                color: '#f0ad4e'
+              }),
+              stroke: new Stroke({
+                color: 'white',
+                width: 2,
+              }),
+        })
+    })
+});
+
 
 map.addInteraction(drawinteraction);
 map.addInteraction(lineinteraction);
+map.addInteraction(addPolygonInteraction);
+map.addInteraction(erasePolygonInteraction);
+
 drawinteraction.setActive(false);
 lineinteraction.setActive(false);
-
-
+addPolygonInteraction.setActive(false);
+erasePolygonInteraction.setActive(false);
 
 var paninteraction;
 map.getInteractions().forEach(function(intr,idx,all) {
@@ -138,24 +191,51 @@ dropdown.addEventListener('change', function (event) {
     drawinteraction.setActive(true);
     paninteraction.setActive(false);
     lineinteraction.setActive(false);
+    addPolygonInteraction.setActive(false);
+    erasePolygonInteraction.setActive(false);
   }
   else if(value=="pan"){
     draw = false;
     drawinteraction.setActive(false);
     paninteraction.setActive(true);
     lineinteraction.setActive(false);
+    addPolygonInteraction.setActive(false);
+    erasePolygonInteraction.setActive(false);
   }
   else if(value=="LineString"){
     draw = false;
     drawinteraction.setActive(false);
     paninteraction.setActive(false);
     lineinteraction.setActive(true);
+    addPolygonInteraction.setActive(false);
+    erasePolygonInteraction.setActive(false);
+  }
+  else if(value=="Add"){
+    draw = false;
+    add = true;
+    drawinteraction.setActive(false);
+    paninteraction.setActive(false);
+    lineinteraction.setActive(false);
+    addPolygonInteraction.setActive(true);
+    erasePolygonInteraction.setActive(false);
+  }
+  else if(value=="Erase"){
+    draw = false;
+    add = false;
+    erase = true;
+    drawinteraction.setActive(false);
+    paninteraction.setActive(false);
+    lineinteraction.setActive(false);
+    addPolygonInteraction.setActive(false);
+    erasePolygonInteraction.setActive(true);
   }
   else {
     
     drawinteraction.setActive(false);
     paninteraction.setActive(false);
     lineinteraction.setActive(false);
+    addPolygonInteraction.setActive(false);
+    erasePolygonInteraction.setActive(false);
     //set flags for paint
     if(value=="threshold") {
       thresholdred(imagerycontext);
@@ -221,15 +301,15 @@ vector.on("prerender",function(event){
   //console.log("ended");
   var vector_sr = vector.getSource();
   var features = vector_sr.getFeatures();
-  //console.log(,"d")
-  if(features.length>=1)
+  //console.log( features[features.length-1].get("name") );
+  if(addPolygonInteraction.getActive() == false && erasePolygonInteraction.getActive()==false && features[features.length-1].get("name")==undefined  && features.length>=1)
     {   
         var coord = features[0].values_.geometry.flatCoordinates;
         var uid = features[0].ol_uid;
         //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
 
         var points = [];
-        if(features[0].getGeometry().getType()=="Polygon" || features[0].getGeometry().getType()=="LineString"){
+        if(features[features.length-1].getGeometry().getType()=="Polygon" || features[0].getGeometry().getType()=="LineString"){
             
             ctx.strokeStyle="red";
             ctx.lineWidth = 5;
@@ -272,6 +352,57 @@ vector.on("prerender",function(event){
         static_layer.setSource(static_source);
 
     }
+    else if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
+      console.log(features[features.length - 1].getStyle())
+
+        var sty = new Style({
+          fill: new Fill({
+            color: 'rgba(255, 170, 70, 0.1)',
+          }),
+          stroke: new Stroke({
+            color: '#f0ad4e',
+            width: 3,
+          }),
+          image: new CircleStyle({
+                radius: 7,
+                fill: new Fill({
+                  color: '#f0ad4e'
+                }),
+                stroke: new Stroke({
+                  color: 'white',
+                  width: 2,
+                }),
+          })
+      });
+      features[features.length -1].setStyle(sty);
+      features[features.length -1].set("name","add");
+}
+else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
+      var sty = new Style({
+        fill: new Fill({
+          color: 'rgba(0, 255, 0, 0.1)',
+        }),
+        stroke: new Stroke({
+          color: '#28a745',
+          width: 3,
+        }),
+        image: new CircleStyle({
+              radius: 7,
+              fill: new Fill({
+                color: '#28a745'
+              }),
+              stroke: new Stroke({
+                color: 'white',
+                width: 2,
+              }),
+        })
+    })
+    features[features.length -1].setStyle(sty);
+    features[features.length -1].set("name","erase");
+    var format = new GeoJSON();
+    var turfpoly = format.writeFeatureObject(features[features.length -1]);
+    console.log(turfpoly);
+  }
 });
 
 
@@ -296,8 +427,6 @@ map.on("pointerdrag",function(event){
   }
 
 });
-
-
 
 var imagerycontext;
 imagery.on('postrender', function (event) {
