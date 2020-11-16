@@ -286,7 +286,7 @@ combine.addEventListener('click',function(){
       if(count2>0){
             var uid = features[i].ol_uid;
             vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-              intersect = turf.intersect(intersect,turfpoly);
+              intersect = turf.difference(intersect,turfpoly);
             
       }
       else{
