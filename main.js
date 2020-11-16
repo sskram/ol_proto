@@ -105,6 +105,7 @@ var mousepos = new MousePosition( {
 map.addControl(mousepos);
 
 var dropdown = document.getElementById('dd_interaction'); 
+var combine  = document.getElementById("combine");
 
 var drawinteraction = new Draw({
   source: vector.getSource(),
@@ -247,6 +248,62 @@ dropdown.addEventListener('change', function (event) {
 
 });
 
+combine.addEventListener('click',function(){
+  console.log("clicked");
+  var vector_sr = vector.getSource();
+  var features = vector_sr.getFeatures();
+  var union;
+  var format = new GeoJSON();
+  var turfpoly;
+  var count =0 ;// = format.writeFeatureObject(features[features.length -1]);
+  //console.log(turfpoly);
+  
+  for(var i = 0;i<features.length;i++){
+    if(features[i].get('name')=="add"){
+      turfpoly = format.writeFeatureObject(features[i]);
+      if(count>0){
+      union = turf.union(union,turfpoly);
+      var uid = features[i].ol_uid;
+      vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+      
+      }
+      else{
+        union = format.writeFeatureObject(features[i]);
+        count = count+1;
+      }
+      //console.log(union);
+    }
+  }
+  console.log("last",union,format.readFeatures(union));
+ // features.push(format.readFeatures(union)[0]);
+  var sty = new Style({
+    fill: new Fill({
+      color: 'rgba(0,255,255, 0.1)',
+    }),
+    stroke: new Stroke({
+      color: '	#00FFFF',
+      width: 3,
+    }),
+    image: new CircleStyle({
+          radius: 7,
+          fill: new Fill({
+            color: '#f0ad4e'
+          }),
+          stroke: new Stroke({
+            color: 'white',
+            width: 2,
+          }),
+    })
+});
+  union = format.readFeatures(union)[0]
+  union.setStyle(sty);
+  //vector_sr.features =format.readFeatures(union)[0];// features;
+  vector_sr.addFeature(union);
+  
+  console.log(vector_sr.getFeatures());
+  vector.setSource(vector_sr);
+});
+
 
 function get_points(coords){
   
@@ -375,7 +432,7 @@ vector.on("prerender",function(event){
           })
       });
       features[features.length -1].setStyle(sty);
-      features[features.length -1].set("name","add");
+      features[features.length -1].set("name","erase");
 }
 else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
       var sty = new Style({
@@ -398,10 +455,8 @@ else if(addPolygonInteraction.getActive() == true && features[features.length - 
         })
     })
     features[features.length -1].setStyle(sty);
-    features[features.length -1].set("name","erase");
-    var format = new GeoJSON();
-    var turfpoly = format.writeFeatureObject(features[features.length -1]);
-    console.log(turfpoly);
+    features[features.length -1].set("name","add");
+   
   }
 });
 

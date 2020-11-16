@@ -4,6 +4,7 @@
     <title>Zoomify</title>
     <!-- Pointer events polyfill for old browsers, see https://caniuse.com/#feat=pointer -->
     <script src="https://unpkg.com/elm-pep"></script>
+    <script src='https://unpkg.com/@turf/turf/turf.min.js'></script>
     <style>
       .map {
         width: 100%;
@@ -13,6 +14,7 @@
     </style>
   </head>
   <body>
+    <button id="combine">Combine</button>
     <div id="map" class="map"></div>
     <div class="controls">
       <select id="dd_interaction">
