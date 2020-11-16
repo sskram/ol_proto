@@ -107,6 +107,47 @@ map.addControl(mousepos);
 var dropdown = document.getElementById('dd_interaction'); 
 var combine  = document.getElementById("combine");
 
+var styleAdd = new Style({
+      fill: new Fill({
+        color: 'rgba(0, 255, 0, 0.1)',
+      }),
+      stroke: new Stroke({
+        color: '#28a745',
+        width: 3,
+      }),
+      image: new CircleStyle({
+            radius: 7,
+            fill: new Fill({
+              color: '#28a745'
+            }),
+            stroke: new Stroke({
+              color: 'white',
+              width: 2,
+            }),
+      })
+});
+
+var styleErase = new Style({
+    fill: new Fill({
+      color: 'rgba(255, 170, 70, 0.1)',
+    }),
+    stroke: new Stroke({
+      color: '#f0ad4e',
+      width: 3,
+    }),
+    image: new CircleStyle({
+          radius: 7,
+          fill: new Fill({
+            color: '#f0ad4e'
+          }),
+          stroke: new Stroke({
+            color: 'white',
+            width: 2,
+          }),
+    })
+});
+
+
 var drawinteraction = new Draw({
   source: vector.getSource(),
   type: "Polygon",
@@ -121,49 +162,13 @@ var lineinteraction = new Draw({
 var addPolygonInteraction = new Draw({
   source: vector.getSource(),
   type: "Polygon",
-  style:new Style({
-        fill: new Fill({
-          color: 'rgba(0, 255, 0, 0.1)',
-        }),
-        stroke: new Stroke({
-          color: '#28a745',
-          width: 3,
-        }),
-        image: new CircleStyle({
-              radius: 7,
-              fill: new Fill({
-                color: '#28a745'
-              }),
-              stroke: new Stroke({
-                color: 'white',
-                width: 2,
-              }),
-        })
-    })
+  style:styleAdd,
 });
 
 var erasePolygonInteraction = new Draw({
   source: vector.getSource(),
   type: "Polygon",
-  style:new Style({
-        fill: new Fill({
-          color: 'rgba(255, 170, 70, 0.1)',
-        }),
-        stroke: new Stroke({
-          color: '#f0ad4e',
-          width: 3,
-        }),
-        image: new CircleStyle({
-              radius: 7,
-              fill: new Fill({
-                color: '#f0ad4e'
-              }),
-              stroke: new Stroke({
-                color: 'white',
-                width: 2,
-              }),
-        })
-    })
+  style:styleErase,
 });
 
 
@@ -186,65 +191,65 @@ map.getInteractions().forEach(function(intr,idx,all) {
 });
 
 dropdown.addEventListener('change', function (event) {
-  var value = event.currentTarget.value;
-  if (value == "polygon") {
-    draw = false;
-    drawinteraction.setActive(true);
-    paninteraction.setActive(false);
-    lineinteraction.setActive(false);
-    addPolygonInteraction.setActive(false);
-    erasePolygonInteraction.setActive(false);
-  }
-  else if(value=="pan"){
-    draw = false;
-    drawinteraction.setActive(false);
-    paninteraction.setActive(true);
-    lineinteraction.setActive(false);
-    addPolygonInteraction.setActive(false);
-    erasePolygonInteraction.setActive(false);
-  }
-  else if(value=="LineString"){
-    draw = false;
-    drawinteraction.setActive(false);
-    paninteraction.setActive(false);
-    lineinteraction.setActive(true);
-    addPolygonInteraction.setActive(false);
-    erasePolygonInteraction.setActive(false);
-  }
-  else if(value=="Add"){
-    draw = false;
-    add = true;
-    drawinteraction.setActive(false);
-    paninteraction.setActive(false);
-    lineinteraction.setActive(false);
-    addPolygonInteraction.setActive(true);
-    erasePolygonInteraction.setActive(false);
-  }
-  else if(value=="Erase"){
-    draw = false;
-    add = false;
-    erase = true;
-    drawinteraction.setActive(false);
-    paninteraction.setActive(false);
-    lineinteraction.setActive(false);
-    addPolygonInteraction.setActive(false);
-    erasePolygonInteraction.setActive(true);
-  }
-  else {
-    
-    drawinteraction.setActive(false);
-    paninteraction.setActive(false);
-    lineinteraction.setActive(false);
-    addPolygonInteraction.setActive(false);
-    erasePolygonInteraction.setActive(false);
-    //set flags for paint
-    if(value=="threshold") {
-      thresholdred(imagerycontext);
+    var value = event.currentTarget.value;
+    if (value == "polygon") {
+      draw = false;
+      drawinteraction.setActive(true);
+      paninteraction.setActive(false);
+      lineinteraction.setActive(false);
+      addPolygonInteraction.setActive(false);
+      erasePolygonInteraction.setActive(false);
     }
-    if(value=="paint") {
-      draw = true;
+    else if(value=="pan"){
+      draw = false;
+      drawinteraction.setActive(false);
+      paninteraction.setActive(true);
+      lineinteraction.setActive(false);
+      addPolygonInteraction.setActive(false);
+      erasePolygonInteraction.setActive(false);
     }
-  }
+    else if(value=="LineString"){
+      draw = false;
+      drawinteraction.setActive(false);
+      paninteraction.setActive(false);
+      lineinteraction.setActive(true);
+      addPolygonInteraction.setActive(false);
+      erasePolygonInteraction.setActive(false);
+    }
+    else if(value=="Add"){
+      draw = false;
+      add = true;
+      drawinteraction.setActive(false);
+      paninteraction.setActive(false);
+      lineinteraction.setActive(false);
+      addPolygonInteraction.setActive(true);
+      erasePolygonInteraction.setActive(false);
+    }
+    else if(value=="Erase"){
+      draw = false;
+      add = false;
+      erase = true;
+      drawinteraction.setActive(false);
+      paninteraction.setActive(false);
+      lineinteraction.setActive(false);
+      addPolygonInteraction.setActive(false);
+      erasePolygonInteraction.setActive(true);
+    }
+    else {
+      
+      drawinteraction.setActive(false);
+      paninteraction.setActive(false);
+      lineinteraction.setActive(false);
+      addPolygonInteraction.setActive(false);
+      erasePolygonInteraction.setActive(false);
+      //set flags for paint
+      if(value=="threshold") {
+        thresholdred(imagerycontext);
+      }
+      if(value=="paint") {
+        draw = true;
+      }
+    }
 
 });
 
@@ -252,54 +257,72 @@ combine.addEventListener('click',function(){
   console.log("clicked");
   var vector_sr = vector.getSource();
   var features = vector_sr.getFeatures();
-  var union;
+  var union,intersect;
   var format = new GeoJSON();
   var turfpoly;
-  var count =0 ;// = format.writeFeatureObject(features[features.length -1]);
-  //console.log(turfpoly);
+  var count1 = 0,count2 = 0;
   
   for(var i = 0;i<features.length;i++){
     if(features[i].get('name')=="add"){
       turfpoly = format.writeFeatureObject(features[i]);
-      if(count>0){
-      union = turf.union(union,turfpoly);
-      var uid = features[i].ol_uid;
-      vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-      
+      if(count1>0){
+            var uid = features[i].ol_uid;
+            vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+                union = turf.union(union,turfpoly);
       }
       else{
-        union = format.writeFeatureObject(features[i]);
-        count = count+1;
+        
+        var uid = features[i].ol_uid;
+        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+          union = format.writeFeatureObject(features[i]);
+        
+        count1 = count1+1;
       }
       //console.log(union);
     }
+    else if( features[i].get('name')=="erase"){
+
+      turfpoly = format.writeFeatureObject(features[i]);
+      if(count2>0){
+            var uid = features[i].ol_uid;
+            vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+              intersect = turf.intersect(intersect,turfpoly);
+            
+      }
+      else{
+        
+        var uid = features[i].ol_uid;
+        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+        intersect = format.writeFeatureObject(features[i]);
+        
+        count2 = count2+1;
+      }
+    }
   }
-  console.log("last",union,format.readFeatures(union));
+  //console.log("last",union,format.readFeatures(union));
  // features.push(format.readFeatures(union)[0]);
   var sty = new Style({
-    fill: new Fill({
-      color: 'rgba(0,255,255, 0.1)',
-    }),
-    stroke: new Stroke({
-      color: '	#00FFFF',
-      width: 3,
-    }),
-    image: new CircleStyle({
-          radius: 7,
-          fill: new Fill({
-            color: '#f0ad4e'
-          }),
-          stroke: new Stroke({
-            color: 'white',
-            width: 2,
-          }),
-    })
-});
-  union = format.readFeatures(union)[0]
-  union.setStyle(sty);
-  //vector_sr.features =format.readFeatures(union)[0];// features;
-  vector_sr.addFeature(union);
+        fill: new Fill({
+          color: 'rgba(0,255,255, 0.1)',
+        }),
+        stroke: new Stroke({
+          color: '	#00FFFF',
+          width: 3,
+        })
+    });
   
+  if(count1>0){  
+    union = format.readFeatures(union)[0]
+    union.setStyle(sty);
+  //vector_sr.features =format.readFeatures(union)[0];// features;
+    vector_sr.addFeature(union);
+  }
+  if(count2>0){
+    intersect = format.readFeatures(intersect)[0];
+    intersect.setStyle(sty);
+  //vector_sr.features =format.readFeatures(union)[0];// features;
+    vector_sr.addFeature(intersect);
+  }
   console.log(vector_sr.getFeatures());
   vector.setSource(vector_sr);
 });
@@ -319,36 +342,27 @@ function get_points(coords){
 
 map.on('click', function(event) {
   //if paint flag ...
-  if(draw == true){
-    var pix = event.pixel;
-  
-    //imagerycontext.fillStyle='blue';
-    //imagerycontext.fillRect(pix[0],pix[1],1000,1000);
+      if(draw == true){
+        var pix = event.pixel;
+        var coords = get_points(event.coordinate);
+        ctx.fillStyle='red';
+        //console.log(pix[0],pix[1])
+        ctx.fillRect(coords[0],coords[1],50,50);
 
-    var coords = get_points(event.coordinate);
-    //coords[0] = Math.round(coords[0]);
-    //coords[1] = Math.round(coords[1]);
-    //coords[1] = Math.abs(coords[1]);
+        var vector_sr = vector.getSource();
+        var features = vector_sr.getFeatures();
 
-    ctx.fillStyle='red';
-    //console.log(pix[0],pix[1])
-    ctx.fillRect(coords[0],coords[1],50,50);
+        var sor = static_layer.getSource();
+        sor.image_.canvas_ = canvas;
+        var static_source = new ImageSource({
+          canvas: canvas,
+          projection: projection,
+          imageExtent: source.getTileGrid().getExtent(),
+        });
+      
+        static_layer.setSource(static_source);
 
-    var vector_sr = vector.getSource();
-    var features = vector_sr.getFeatures();
-  //console.log(features.length,"d")
-
-    var sor = static_layer.getSource();
-    sor.image_.canvas_ = canvas;
-    var static_source = new ImageSource({
-      canvas: canvas,
-      projection: projection,
-      imageExtent: source.getTileGrid().getExtent(),
-    });
-   
-    static_layer.setSource(static_source);
-
-  }
+      }
 
 
 });
@@ -356,108 +370,68 @@ map.on('click', function(event) {
 
 vector.on("prerender",function(event){
   //console.log("ended");
-  var vector_sr = vector.getSource();
-  var features = vector_sr.getFeatures();
-  //console.log( features[features.length-1].get("name") );
-  if(addPolygonInteraction.getActive() == false && erasePolygonInteraction.getActive()==false && features[features.length-1].get("name")==undefined  && features.length>=1)
-    {   
-        var coord = features[0].values_.geometry.flatCoordinates;
-        var uid = features[0].ol_uid;
-        //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
+    var vector_sr = vector.getSource();
+    var features = vector_sr.getFeatures();
+    //console.log( features[features.length-1].get("name") );
+    if(addPolygonInteraction.getActive() == false && erasePolygonInteraction.getActive()==false && features[features.length-1].get("name")==undefined  && features.length>=1)
+      {   
+          var coord = features[0].values_.geometry.flatCoordinates;
+          var uid = features[0].ol_uid;
+          //console.log(features[0],coord.length,coord,uid,vector_sr.getFeatureByUid(uid));
 
-        var points = [];
-        if(features[features.length-1].getGeometry().getType()=="Polygon" || features[0].getGeometry().getType()=="LineString"){
-            
-            ctx.strokeStyle="red";
-            ctx.lineWidth = 5;
-
-            if(features[0].getGeometry().getType()=="LineString"){
-              ctx.strokeStyle="cyan";
+          var points = [];
+          if(features[features.length-1].getGeometry().getType()=="Polygon" || features[0].getGeometry().getType()=="LineString"){
+              
+              ctx.strokeStyle="red";
               ctx.lineWidth = 5;
-            }
-            ctx.beginPath();
-            
-            for(var i=0;i<coord.length;){
 
-                points = get_points([coord[i],coord[i+1]]);
-                //console.log(points[0],points[1],i);
-                
-                if(i == 0){
-                  ctx.moveTo(points[0],points[1]);
-                }
-                if(i<coord.length){
+              if(features[0].getGeometry().getType()=="LineString"){
+                ctx.strokeStyle="cyan";
+                ctx.lineWidth = 5;
+              }
+              ctx.beginPath();
+              
+              for(var i=0;i<coord.length;){
+
+                  points = get_points([coord[i],coord[i+1]]);
+                  //console.log(points[0],points[1],i);
                   
-                  ctx.lineTo(points[0],points[1]);
-                }
+                  if(i == 0){
+                    ctx.moveTo(points[0],points[1]);
+                  }
+                  if(i<coord.length){
+                    
+                    ctx.lineTo(points[0],points[1]);
+                  }
 
-                i = i+2;
-            }
-            
-            ctx.stroke();
-        }
-         
-        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+                  i = i+2;
+              }
+              
+              ctx.stroke();
+          }
+          
+          vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
 
-        var sor = static_layer.getSource();
-        sor.image_.canvas_ = canvas;
-        var static_source = new ImageSource({
-            canvas: canvas,
-            projection: projection,
-            imageExtent: source.getTileGrid().getExtent(),
-        });
-   
-        static_layer.setSource(static_source);
+          var sor = static_layer.getSource();
+          sor.image_.canvas_ = canvas;
+          var static_source = new ImageSource({
+              canvas: canvas,
+              projection: projection,
+              imageExtent: source.getTileGrid().getExtent(),
+          });
+    
+          static_layer.setSource(static_source);
 
-    }
+      }
     else if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
-      console.log(features[features.length - 1].getStyle())
+          features[features.length -1].setStyle(styleErase);
+          features[features.length -1].set("name","erase");
+    }
+    else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
+          features[features.length -1].setStyle(styleAdd);
+          features[features.length -1].set("name","add");
+    }
 
-        var sty = new Style({
-          fill: new Fill({
-            color: 'rgba(255, 170, 70, 0.1)',
-          }),
-          stroke: new Stroke({
-            color: '#f0ad4e',
-            width: 3,
-          }),
-          image: new CircleStyle({
-                radius: 7,
-                fill: new Fill({
-                  color: '#f0ad4e'
-                }),
-                stroke: new Stroke({
-                  color: 'white',
-                  width: 2,
-                }),
-          })
-      });
-      features[features.length -1].setStyle(sty);
-      features[features.length -1].set("name","erase");
-}
-else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
-      var sty = new Style({
-        fill: new Fill({
-          color: 'rgba(0, 255, 0, 0.1)',
-        }),
-        stroke: new Stroke({
-          color: '#28a745',
-          width: 3,
-        }),
-        image: new CircleStyle({
-              radius: 7,
-              fill: new Fill({
-                color: '#28a745'
-              }),
-              stroke: new Stroke({
-                color: 'white',
-                width: 2,
-              }),
-        })
-    })
-    features[features.length -1].setStyle(sty);
-    features[features.length -1].set("name","add");
-   
-  }
 });
 
 
