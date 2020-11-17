@@ -20,8 +20,6 @@ import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
 
 var imgWidth = 12000;
 var imgHeight = 12000;
-var add = false;
-var erase = false;
 //iipbase = "http://braincircuits.org/cgi-bin";
 //sectionaccessurl = 'http://mitradevel.cshl.org/webtools/seriesbrowser/getsectionjp2path/'+sectionid;
 var zoomifyUrl = 'http://braincircuits.org/cgi-bin/iipsrv.fcgi?FIF=/PMD2057/PMD2057%262056-F9-2015.03.06-17.55.48_PMD2057_1_0025.jp2&GAM=1&MINMAX=1:0,255&MINMAX=2:0,255&MINMAX=3:0,255&JTL={z},{tileIndex}';
@@ -105,48 +103,6 @@ var mousepos = new MousePosition( {
 map.addControl(mousepos);
 
 var dropdown = document.getElementById('dd_interaction'); 
-var combine  = document.getElementById("combine");
-
-var styleAdd = new Style({
-      fill: new Fill({
-        color: 'rgba(0, 255, 0, 0.1)',
-      }),
-      stroke: new Stroke({
-        color: '#28a745',
-        width: 3,
-      }),
-      image: new CircleStyle({
-            radius: 7,
-            fill: new Fill({
-              color: '#28a745'
-            }),
-            stroke: new Stroke({
-              color: 'white',
-              width: 2,
-            }),
-      })
-});
-
-var styleErase = new Style({
-    fill: new Fill({
-      color: 'rgba(255, 170, 70, 0.1)',
-    }),
-    stroke: new Stroke({
-      color: '#f0ad4e',
-      width: 3,
-    }),
-    image: new CircleStyle({
-          radius: 7,
-          fill: new Fill({
-            color: '#f0ad4e'
-          }),
-          stroke: new Stroke({
-            color: 'white',
-            width: 2,
-          }),
-    })
-});
-
 
 var drawinteraction = new Draw({
   source: vector.getSource(),
@@ -159,28 +115,11 @@ var lineinteraction = new Draw({
   freehand: true,
 })
 
-var addPolygonInteraction = new Draw({
-  source: vector.getSource(),
-  type: "Polygon",
-  style:styleAdd,
-});
-
-var erasePolygonInteraction = new Draw({
-  source: vector.getSource(),
-  type: "Polygon",
-  style:styleErase,
-});
-
-
 map.addInteraction(drawinteraction);
 map.addInteraction(lineinteraction);
-map.addInteraction(addPolygonInteraction);
-map.addInteraction(erasePolygonInteraction);
 
 drawinteraction.setActive(false);
 lineinteraction.setActive(false);
-addPolygonInteraction.setActive(false);
-erasePolygonInteraction.setActive(false);
 
 var paninteraction;
 map.getInteractions().forEach(function(intr,idx,all) {
@@ -197,51 +136,36 @@ dropdown.addEventListener('change', function (event) {
       drawinteraction.setActive(true);
       paninteraction.setActive(false);
       lineinteraction.setActive(false);
-      addPolygonInteraction.setActive(false);
-      erasePolygonInteraction.setActive(false);
     }
-    else if(value=="pan"){
+    else if(value=="pan"){1
       draw = false;
       drawinteraction.setActive(false);
       paninteraction.setActive(true);
       lineinteraction.setActive(false);
-      addPolygonInteraction.setActive(false);
-      erasePolygonInteraction.setActive(false);
     }
     else if(value=="LineString"){
       draw = false;
       drawinteraction.setActive(false);
       paninteraction.setActive(false);
       lineinteraction.setActive(true);
-      addPolygonInteraction.setActive(false);
-      erasePolygonInteraction.setActive(false);
     }
     else if(value=="Add"){
       draw = false;
-      add = true;
       drawinteraction.setActive(false);
       paninteraction.setActive(false);
       lineinteraction.setActive(false);
-      addPolygonInteraction.setActive(true);
-      erasePolygonInteraction.setActive(false);
     }
     else if(value=="Erase"){
       draw = false;
-      add = false;
-      erase = true;
       drawinteraction.setActive(false);
       paninteraction.setActive(false);
       lineinteraction.setActive(false);
-      addPolygonInteraction.setActive(false);
-      erasePolygonInteraction.setActive(true);
     }
     else {
       
       drawinteraction.setActive(false);
       paninteraction.setActive(false);
       lineinteraction.setActive(false);
-      addPolygonInteraction.setActive(false);
-      erasePolygonInteraction.setActive(false);
       //set flags for paint
       if(value=="threshold") {
         thresholdred(imagerycontext);
@@ -252,81 +176,6 @@ dropdown.addEventListener('change', function (event) {
     }
 
 });
-
-combine.addEventListener('click',function(){
-  console.log("clicked");
-  var vector_sr = vector.getSource();
-  var features = vector_sr.getFeatures();
-  var union,intersect;
-  var format = new GeoJSON();
-  var turfpoly;
-  var count1 = 0,count2 = 0;
-  
-  for(var i = 0;i<features.length;i++){
-    if(features[i].get('name')=="add"){
-      turfpoly = format.writeFeatureObject(features[i]);
-      if(count1>0){
-            var uid = features[i].ol_uid;
-            vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-                union = turf.union(union,turfpoly);
-      }
-      else{
-        
-        var uid = features[i].ol_uid;
-        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-          union = format.writeFeatureObject(features[i]);
-        
-        count1 = count1+1;
-      }
-      //console.log(union);
-    }
-    else if( features[i].get('name')=="erase"){
-
-      turfpoly = format.writeFeatureObject(features[i]);
-      if(count2>0){
-            var uid = features[i].ol_uid;
-            vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-              intersect = turf.difference(intersect,turfpoly);
-            
-      }
-      else{
-        
-        var uid = features[i].ol_uid;
-        vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
-        intersect = format.writeFeatureObject(features[i]);
-        
-        count2 = count2+1;
-      }
-    }
-  }
-  //console.log("last",union,format.readFeatures(union));
- // features.push(format.readFeatures(union)[0]);
-  var sty = new Style({
-        fill: new Fill({
-          color: 'rgba(0,255,255, 0.1)',
-        }),
-        stroke: new Stroke({
-          color: '	#00FFFF',
-          width: 3,
-        })
-    });
-  
-  if(count1>0){  
-    union = format.readFeatures(union)[0]
-    union.setStyle(sty);
-  //vector_sr.features =format.readFeatures(union)[0];// features;
-    vector_sr.addFeature(union);
-  }
-  if(count2>0){
-    intersect = format.readFeatures(intersect)[0];
-    intersect.setStyle(sty);
-  //vector_sr.features =format.readFeatures(union)[0];// features;
-    vector_sr.addFeature(intersect);
-  }
-  console.log(vector_sr.getFeatures());
-  vector.setSource(vector_sr);
-});
-
 
 function get_points(coords){
   
@@ -373,7 +222,7 @@ vector.on("prerender",function(event){
     var vector_sr = vector.getSource();
     var features = vector_sr.getFeatures();
     //console.log( features[features.length-1].get("name") );
-    if(addPolygonInteraction.getActive() == false && erasePolygonInteraction.getActive()==false && features[features.length-1].get("name")==undefined  && features.length>=1)
+    if(features.length>=1)
       {   
           var coord = features[0].values_.geometry.flatCoordinates;
           var uid = features[0].ol_uid;
@@ -423,15 +272,6 @@ vector.on("prerender",function(event){
           static_layer.setSource(static_source);
 
       }
-    else if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
-          features[features.length -1].setStyle(styleErase);
-          features[features.length -1].set("name","erase");
-    }
-    else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
-          features[features.length -1].setStyle(styleAdd);
-          features[features.length -1].set("name","add");
-    }
-
 });
 
 

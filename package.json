@@ -12,7 +12,8 @@
   },
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build --experimental-scope-hoisting --public-url . index.html"
+    "build": "parcel build --experimental-scope-hoisting --public-url . index.html",
+    "dist": "mkdir -p dist && cp -R node_modules src index.js ... dist"
   },
   "version": "1.0.0",
   "main": "main.js",
