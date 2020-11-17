@@ -152,7 +152,7 @@ combine.addEventListener('click',function(){
         width: 3,
       })
     });
-    
+    var isIntersected = 0;
     for(var i = 0;i<features.length;i++){
       
         turfpoly = format.writeFeatureObject(features[i]);
@@ -160,7 +160,14 @@ combine.addEventListener('click',function(){
             if(features[i].get('name')=="add"){
               var uid = features[i].ol_uid;
               vector_sr.removeFeature(vector_sr.getFeatureByUid(uid));
+              isIntersected = turf.intersect(polygon,turfpoly);
+              //console.log(isIntersected," check");
+              if(isIntersected == null){
+                polygon = polygon;
+              }
+              else{
               polygon = turf.union(polygon,turfpoly);
+              }
             }
             else if(count>0 && features[i].get('name')=="erase"){
               var uid = features[i].ol_uid;
