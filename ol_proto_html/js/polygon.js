@@ -31,7 +31,7 @@ combine.addEventListener('click',function(){
 });
 
 saveFile.addEventListener('click',function(){
-  console.log("e")
+  console.log("Saving File")
   var json = saveFeatures();
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(json, null, 2)], {
@@ -43,12 +43,6 @@ saveFile.addEventListener('click',function(){
   document.body.removeChild(a);
 });
 
-loadFeatures.addEventListener('change',function(){
- 
-  console.log("Files",loadFeatures);
-
-});
-
 function loadData(){
   const reader = new FileReader();
   reader.readAsText(loadFile.files[0]);
@@ -56,7 +50,7 @@ function loadData(){
 }
 
 function handleFileLoad(event){
-  console.log(event.target.result);
+  //console.log(event.target.result);
   loadFeatures(event.target.result);
   //document.getElementById('fileContent').textContent = event.target.result;
 }

@@ -5,7 +5,7 @@ var styleErase = 0;
 var addPolygonInteraction = 0;
 var erasePolygonInteraction = 0;
 var format = new ol.format.GeoJSON();
-
+//const polygonClipping = require('polygon-clipping')
 
 
 function createInteraction(){
@@ -169,16 +169,20 @@ function unionDifference(){
               last = polygon;
               polygon = turf.difference(polygon,turfpoly);
               if(polygon==null){
-                polygon = last;
-                var points = turf.points(turf.getCoords(polygon)[0]);
-                var len = points.features.length;
-                if(turf.pointsWithinPolygon(points,turfpoly).features.length==len){
-                  polygon = turf.difference(polygon,turfpoly);
-                }
-                else{
-                  polygon = turf.difference(turf.toWgs84(polygon),turf.toWgs84(turfpoly));
-                  console.log(polygon);
-                } 
+                //console.log(turf.getCoords(polygon)[0],"points");
+                //var points = turf.points(turf.getCoords(polygon)[0]);
+                //var len = points.features.length;
+                //if(false && turf.pointsWithinPolygon(points,turfpoly).features.length==len){
+                //  polygon = turf.difference(polygon,turfpoly);
+                //}
+                //else{
+                  //polygon = turf.difference(turf.toWgs84(polygon),turf.toWgs84(turfpoly));//
+                  var poly1 = turf.getCoords(last);
+                  var poly2 = turf.getCoords(turfpoly);
+                  var polyDiff = polygonClipping.difference(poly1,poly2);
+                  polyDiff = turf.multiPolygon(polyDiff);
+                  polygon = polyDiff;
+                //} 
               }
             }
         }
@@ -194,7 +198,7 @@ function unionDifference(){
         polygon.setStyle(sty);
         vector_sr.addFeature(polygon);
     }
-    console.log(vector_sr.getFeatures());
+    //console.log(vector_sr.getFeatures());
     vector.setSource(vector_sr);
 }
 

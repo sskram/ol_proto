@@ -4,7 +4,8 @@
     "@turf/along": "^6.0.1",
     "ol": "^6.4.3",
     "package-lock.json": "^1.0.0",
-    "package.json": "^2.0.1"
+    "package.json": "^2.0.1",
+    "polygon-clipping": "^0.15.1"
   },
   "devDependencies": {
     "parcel": "1.11.0",
