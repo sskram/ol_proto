@@ -1,5 +1,5 @@
 app = [];
-app.atlas_info = '/assert/h.json'; 
+app.atlas_info = '/open_layers/ol_proto/ol_proto_html/assert/h.json'; 
 
 function loadAtlasInfo(){
 
