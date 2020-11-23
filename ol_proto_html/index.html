@@ -19,7 +19,6 @@
   margin-right: auto; */
         width: 100%;
         height:700px;
-        margin-top:100px;
       }
     </style>
   </head>
@@ -36,7 +35,8 @@
         <option value="None">None</option>
       </select>
       <button id="combine">Combine</button>
-      <div id="mouse-position"></div>
+      <button id="saveFeatures">Save feature</button>
+      <input type="file" id="loadFeatures" onchange="loadData()" name="loadFeatures">
     </div>
     <div id="jstree_block" style="height: calc(50% - 2px); overflow-y : scroll; margin-left: 10px;">
       <div class="active-pink-3 active-pink-4 mb-4">
@@ -52,7 +52,9 @@
 
     <script src="js/util.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <script src="js/turfUtil.js"></script>
     <script src="js/polygon.js"></script>
+    
     <script type="text/javascript">
       loadAtlasInfo();
     </script>
