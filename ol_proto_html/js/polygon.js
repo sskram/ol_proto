@@ -15,6 +15,8 @@ var styleAdd = 0;
 var styleErase = 0;
 var addPolygonInteraction = 0;
 var erasePolygonInteraction = 0;
+var featureStack = [];
+var lastol_uid=0;
 var format = new ol.format.GeoJSON(); //Geojson to read and write features
 
 //json format
@@ -127,20 +129,56 @@ function addListener(){
     vector.on("prerender",function(event){
         var vector_sr = vector.getSource();
         var features = vector_sr.getFeatures();
-        if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){ //check if style is already set
-              features[features.length -1].setStyle(styleErase);
-              features[features.length -1].set("name","erase");
-              var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
-              saveJson["userActions"].push(temp);
-
+        console.log("yup",features[features.length-1].ol_uid,lastol_uid,features[features.length-1].ol_uid>lastol_uid,parseInt(features[features.length-1].ol_uid)>lastol_uid == true ,features );
+        if(parseInt(features[features.length-1].ol_uid)>lastol_uid == true)
+        {   console.log("inside")
+            if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null ){ //check if style is already set
+                  console.log("eraseeeee",features[features.length - 1].getStyle(),features[features.length - 1].getStyle())
+                  features[features.length -1].setStyle(styleErase);
+                  features[features.length -1].set("name","erase");
+                  featureStack.push(features[features.length -1]);
+                  var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
+                  saveJson["userActions"].push(temp);   
+                  console.log("erase",features[features.length -1]);
+                  lastol_uid = parseInt(features[features.length -1].ol_uid);
+                  
+            }
+            else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){//check if style is already set
+                  features[features.length -1].setStyle(styleAdd);
+                  features[features.length -1].set("name","add");
+                  featureStack.push(features[features.length -1]);
+                  var temp = {"action":"Add","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
+                  saveJson["userActions"].push(temp);
+                  lastol_uid = parseInt(features[features.length -1].ol_uid);
+                  
+            }
         }
-        else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){//check if style is already set
-              features[features.length -1].setStyle(styleAdd);
-              features[features.length -1].set("name","add");
-              
-              var temp = {"action":"Add","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
-              saveJson["userActions"].push(temp);
+        else if(parseInt(features[features.length-1].ol_uid)<lastol_uid == true){
+          console.log("tii");
+          console.log(featureStack,"before");
+          for(var i =0;i<features.length;i++){
+            if(parseInt(features[i].ol_uid)>lastol_uid){
+                  features[i].setStyle(styleErase);
+                  features[i].set("name","erase");
+                  
+                  //featureStack.push(features[i]);
+                  var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[i]]))}
+                  saveJson["userActions"].push(temp);   
+                  console.log("erase",features[i]);
+                  lastol_uid = parseInt(features[i].ol_uid);
+                  vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));
+                  
+            }
+            else{
+              vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));
+              }
+          }
+            
+          
+            console.log(featureStack,"after");
+          vector_sr.addFeatures(featureStack);
         }
+        
     });
    
 }
@@ -218,12 +256,15 @@ function combinePolygon(){
         width: 3,
       })
     });
-    var obj = unionDifference(vector_sr,features,sty,format);
+    var obj = unionDifference(vector_sr,features,sty,format,lastol_uid);
     var polygon = obj["polygon"];
     var count = obj["count"];
     if(count>0 && polygon!=null){  
       polygon = format.readFeatures(polygon)[0]
       polygon.setStyle(sty);
+      lastol_uid = parseInt(polygon.ol_uid);
+      featureStack = [polygon];
+      console.log("combined",lastol_uid);
       vector_sr.addFeature(polygon);
     }
     vector.setSource(vector_sr);
@@ -262,7 +303,3 @@ function loadData(){
 function handleFileLoad(event){
     loadFeatures(event.target.result);
 }
-
-
-
-

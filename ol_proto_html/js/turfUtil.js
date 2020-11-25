@@ -25,7 +25,7 @@ function differnce(vector_sr,uid,polygon,turfpoly){
 }
 
 //Funtion to union and difference all the features and return a single multipolygon
-function unionDifference(vector_sr,features,sty,format){
+function unionDifference(vector_sr,features,sty,format,lastid){
 
     var turfpoly;
     var polygon;
