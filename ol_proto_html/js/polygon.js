@@ -198,6 +198,13 @@ dropdown.addEventListener('change', function (event) {
 
 });
 
+//set check point
+function setCheckpoint(){
+    saveJson["userActions"] = [];
+    saveJson["firstpassAtlas"] = saveJson["outputCombine"]
+    saveJson["outputCombine"] = {};
+}
+
 //function to combine all the features
 function combinePolygon(){
     var vector_sr = vector.getSource();
@@ -232,6 +239,7 @@ combine.addEventListener('click',function(){
 //save the features as json 
 saveFile.addEventListener('click',function(){
     console.log("Saving File");
+    combinePolygon();
     var json = saveJson;
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([JSON.stringify(json, null, 2)], {
@@ -241,6 +249,7 @@ saveFile.addEventListener('click',function(){
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    setCheckpoint();  
 });
 
 //load file from input and read file
