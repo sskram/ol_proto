@@ -15,36 +15,34 @@ var styleAdd = 0;
 var styleErase = 0;
 var addPolygonInteraction = 0;
 var erasePolygonInteraction = 0;
-var format = new ol.format.GeoJSON();
-//const polygonClipping = require('polygon-clipping')
+var format = new ol.format.GeoJSON(); //Geojson to read and write features
+
+//json format
 var saveJson = {
-  "firstpassAtlas":{
-
-  },
+  "firstpassAtlas":{},
   "userActions":[],
-  "outputCombine":{
+  "outputCombine":{}
+};
 
-  }
-}
-
+//Function to initalize map and layers
 function mapInit(imgWidth,imgHeight,zoomifyUrl){
     
-    var source = new ol.source.Zoomify({
+    var source = new ol.source.Zoomify({ //init zoomify source
         url: zoomifyUrl,
         size: [imgWidth, imgHeight],
         crossOrigin: 'anonymous',
         zDirection: -1, // Ensure we get a tile with the screen resolution or higher
       });
     var extent = source.getTileGrid().getExtent();
-    var imagery = new ol.layer.Tile({
+    var imagery = new ol.layer.Tile({ 
         source: source,
     });
       
-    vector = new ol.layer.Vector({
+    vector = new ol.layer.Vector({ // init vector layer
         source: new ol.source.Vector({wrapX: false}),
     });
     
-    map = new ol.Map({
+    map = new ol.Map({ //init map
         layers: [imagery,vector],
         target: 'map',
         view: new ol.View({
@@ -58,61 +56,63 @@ function mapInit(imgWidth,imgHeight,zoomifyUrl){
 
 }
 
+// create interactions for the vector layer and create styles for interactions
 function createInteraction(){
-  styleAdd = new ol.style.Style({
+
+    styleAdd = new ol.style.Style({ //Create style for add interaction
+        fill: new ol.style.Fill({
+          color: 'rgba(0, 255, 0, 0.1)',
+        }),
+        stroke: new ol.style.Stroke({
+          color: '#28a745',
+          width: 3,
+        }),
+        image: new ol.style.Circle({
+              radius: 7,
+              fill: new ol.style.Fill({
+                color: '#28a745'
+              }),
+              stroke: new ol.style.Stroke({
+                color: 'white',
+                width: 2,
+              }),
+        })
+    });
+  
+    styleErase = new  ol.style.Style({ //Create style for erase interaction
       fill: new ol.style.Fill({
-        color: 'rgba(0, 255, 0, 0.1)',
+        color: 'rgba(255, 170, 70, 0.1)',
       }),
       stroke: new ol.style.Stroke({
-        color: '#28a745',
+        color: '#f0ad4e',
         width: 3,
       }),
       image: new ol.style.Circle({
             radius: 7,
             fill: new ol.style.Fill({
-              color: '#28a745'
+              color: '#f0ad4e'
             }),
             stroke: new ol.style.Stroke({
               color: 'white',
               width: 2,
             }),
       })
-  });
-  
-  styleErase = new  ol.style.Style({
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 170, 70, 0.1)',
-    }),
-    stroke: new ol.style.Stroke({
-      color: '#f0ad4e',
-      width: 3,
-    }),
-    image: new ol.style.Circle({
-          radius: 7,
-          fill: new ol.style.Fill({
-            color: '#f0ad4e'
-          }),
-          stroke: new ol.style.Stroke({
-            color: 'white',
-            width: 2,
-          }),
-    })
-  });
+    });
 
-  addPolygonInteraction = new ol.interaction.Draw({
-      source: vector.getSource(),
-      type: "Polygon",
-      style: styleAdd,
-   });
-    
-  erasePolygonInteraction = new ol.interaction.Draw({
-      source: vector.getSource(),
-      type: "Polygon",
-      style: styleErase,
-  });
+    addPolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for add
+        source: vector.getSource(),
+        type: "Polygon",
+        style: styleAdd,
+    });
+      
+    erasePolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for erase
+        source: vector.getSource(),
+        type: "Polygon",
+        style: styleErase,
+    });
 }
 
-
+//add interactions to the map
 function addInteractions(){
 
     map.addInteraction(addPolygonInteraction);
@@ -122,67 +122,65 @@ function addInteractions(){
 
 }
 
-
-function addListerner(){
+//add prerender eventlistener for vector layer to avoid styele change after drawing polygon.
+function addListener(){
     vector.on("prerender",function(event){
         var vector_sr = vector.getSource();
         var features = vector_sr.getFeatures();
-        if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
+        if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){ //check if style is already set
               features[features.length -1].setStyle(styleErase);
               features[features.length -1].set("name","erase");
               var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
               saveJson["userActions"].push(temp);
 
         }
-        else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){
+        else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){//check if style is already set
               features[features.length -1].setStyle(styleAdd);
               features[features.length -1].set("name","add");
               
               var temp = {"action":"Add","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
               saveJson["userActions"].push(temp);
         }
-    
     });
+   
 }
 
-
+//function to combine the polygons and convert features to json for downloading
 function saveFeatures(){
-  var vector_sr = vector.getSource();
-  var features = vector_sr.getFeatures();
-   return format.writeFeatures(features) ;
+    combinePolygon();
+    var vector_sr = vector.getSource();
+    var features = vector_sr.getFeatures();
+    return format.writeFeatures(features) ;
 }
 
+//function to load the features from json
 function loadFeatures(content){
-  var vector_sr = vector.getSource();
-  var features = vector_sr.getFeatures();
-  console.log(JSON.parse(content)["outputCombine"],"ertyui")
-  content = JSON.parse(content);
-  if(content["outputCombine"] != undefined){
-      var featuresToLoad = format.readFeatures(content["outputCombine"]);
-      console.log(featuresToLoad);
-      for(var i=0;i<featuresToLoad.length;i++){
-          if(featuresToLoad[i].get("name")=="add"){
-              featuresToLoad[i].setStyle(styleAdd);
-          }
-          else if(featuresToLoad[i].get("name")=="erase"){
-              featuresToLoad[i].setStyle(styleErase);
-          }
-          vector_sr.addFeature(featuresToLoad[i]);
-      }
-    saveJson["firstpassAtlas"] =  content["outputCombine"]; 
-  }
+    var vector_sr = vector.getSource();
+    var features = vector_sr.getFeatures();
+  
+    content = JSON.parse(content);
+    if(content["outputCombine"]["type"]!= undefined || content["outputCombine"].length!=undefined ){
+        var featuresToLoad = format.readFeatures(content["outputCombine"]);
+        console.log(featuresToLoad);
+        for(var i=0;i<featuresToLoad.length;i++){
+            if(featuresToLoad[i].get("name")=="add"){
+                featuresToLoad[i].setStyle(styleAdd);
+            }
+            else if(featuresToLoad[i].get("name")=="erase"){
+                featuresToLoad[i].setStyle(styleErase);
+            }
+            vector_sr.addFeature(featuresToLoad[i]);
+        }
+      saveJson["firstpassAtlas"] =  content["outputCombine"]; 
+    }
   
 }
 
+mapInit(imgWidth,imgHeight,zoomifyUrl); //initialize map
+addInteractions(); //add interactions to map
+addListener(); //add eventlistner to map
 
-
-
-
-
-mapInit(imgWidth,imgHeight,zoomifyUrl);
-addInteractions();
-addListerner();
-
+//function to handle interactions with map 
 dropdown.addEventListener('change', function (event) {
     var value = event.currentTarget.value;
     if(value=="Add"){
@@ -199,40 +197,62 @@ dropdown.addEventListener('change', function (event) {
     }
 
 });
-  
+
+//function to combine all the features
+function combinePolygon(){
+    var vector_sr = vector.getSource();
+    var features = vector_sr.getFeatures();
+    var sty = new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: 'rgba(0,255,255, 0.1)',
+      }),
+      stroke: new ol.style.Stroke({
+        color: '	#00FFFF',
+        width: 3,
+      })
+    });
+    var obj = unionDifference(vector_sr,features,sty,format);
+    var polygon = obj["polygon"];
+    var count = obj["count"];
+    if(count>0 && polygon!=null){  
+      polygon = format.readFeatures(polygon)[0]
+      polygon.setStyle(sty);
+      vector_sr.addFeature(polygon);
+    }
+    vector.setSource(vector_sr);
+    
+    saveJson["outputCombine"] = JSON.parse(format.writeFeatures(features));
+}
+
+
 combine.addEventListener('click',function(){
-  unionDifference();
-  var vector_sr = vector.getSource();
-  var features = vector_sr.getFeatures();
-  saveJson["outputCombine"] = JSON.parse(format.writeFeatures(features));
-
+    combinePolygon();
 });
 
+//save the features as json 
 saveFile.addEventListener('click',function(){
-  console.log("Saving File")
-  var json = saveJson;///saveFeatures();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(json, null, 2)], {
-    type: "text/plain"
-  }));
-  a.setAttribute("download", "feature.json");
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+    console.log("Saving File");
+    var json = saveJson;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(json, null, 2)], {
+      type: "text/plain"
+    }));
+    a.setAttribute("download", "feature.json");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 });
 
+//load file from input and read file
 function loadData(){
-  const reader = new FileReader();
-  reader.readAsText(loadFile.files[0]);
-  reader.onload = handleFileLoad;
+    const reader = new FileReader();
+    reader.readAsText(loadFile.files[0]);
+    reader.onload = handleFileLoad;
 }
 
 function handleFileLoad(event){
-  loadFeatures(event.target.result);
+    loadFeatures(event.target.result);
 }
-
-
-
 
 
 
