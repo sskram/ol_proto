@@ -249,7 +249,7 @@ function setCheckpoint(){
 //function to combine all the features
 function combinePolygon(){
     var vector_sr = vector.getSource();
-    var features = vector_sr.getFeatures();
+    
     var sty = new ol.style.Style({
       fill: new ol.style.Fill({
         color: 'rgba(0,255,255, 0.1)',
@@ -266,8 +266,11 @@ function combinePolygon(){
       polygon = format.readFeatures(polygon)[0]
       polygon.setStyle(sty);
       lastol_uid = parseInt(polygon.ol_uid);
+      last_size = 1;
       featureStack = [polygon];
       console.log("combined",lastol_uid);
+      var features = vector_sr.getFeatures();
+      
       vector_sr.addFeature(polygon);
     }
     vector.setSource(vector_sr);
