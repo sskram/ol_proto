@@ -17,6 +17,7 @@ var addPolygonInteraction = 0;
 var erasePolygonInteraction = 0;
 var featureStack = [];
 var lastol_uid=0;
+var last_size = 0;
 var format = new ol.format.GeoJSON(); //Geojson to read and write features
 
 //json format
@@ -129,7 +130,8 @@ function addListener(){
     vector.on("prerender",function(event){
         var vector_sr = vector.getSource();
         var features = vector_sr.getFeatures();
-        console.log("yup",features[features.length-1].ol_uid,lastol_uid,features[features.length-1].ol_uid>lastol_uid,parseInt(features[features.length-1].ol_uid)>lastol_uid == true ,features );
+        var f = [];
+        console.log("yup",features[features.length-1].ol_uid,lastol_uid,features[features.length-1].ol_uid>lastol_uid,parseInt(features[features.length-1].ol_uid)>lastol_uid == false,features );
         if(parseInt(features[features.length-1].ol_uid)>lastol_uid == true)
         {   console.log("inside")
             if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null ){ //check if style is already set
@@ -141,6 +143,8 @@ function addListener(){
                   saveJson["userActions"].push(temp);   
                   console.log("erase",features[features.length -1]);
                   lastol_uid = parseInt(features[features.length -1].ol_uid);
+                  last_size = last_size+1;
+                  
                   
             }
             else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){//check if style is already set
@@ -150,33 +154,45 @@ function addListener(){
                   var temp = {"action":"Add","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
                   saveJson["userActions"].push(temp);
                   lastol_uid = parseInt(features[features.length -1].ol_uid);
+                  last_size = last_size+1;
                   
             }
         }
-        else if(parseInt(features[features.length-1].ol_uid)<lastol_uid == true){
+        else if(features.length > last_size){
           console.log("tii");
           console.log(featureStack,"before");
           for(var i =0;i<features.length;i++){
             if(parseInt(features[i].ol_uid)>lastol_uid){
                   features[i].setStyle(styleErase);
                   features[i].set("name","erase");
-                  
-                  //featureStack.push(features[i]);
+                  f = features[i];
                   var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[i]]))}
                   saveJson["userActions"].push(temp);   
                   console.log("erase",features[i]);
-                  lastol_uid = parseInt(features[i].ol_uid);
+                  
                   vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));
                   
             }
-            else{
-              vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));
-              }
+            
           }
             
-          
-            console.log(featureStack,"after");
+          vector_sr.clear();
+          console.log(featureStack,"after");
           vector_sr.addFeatures(featureStack);
+          console.log(vector_sr.getFeatures(),"before adding in vec");
+          console.log(f,"see this")
+          
+          f.setStyle(styleErase);
+          f.set("name","erase");
+          console.log("new",f);
+          
+          vector_sr.addFeature(f);
+          featureStack.push(f);
+
+          console.log(vector_sr.getFeatures(),"after adding in vec");
+          last_size = last_size+1;
+          lastol_uid = parseInt(featureNew.ol_uid);
+
         }
         
     });
@@ -256,7 +272,7 @@ function combinePolygon(){
         width: 3,
       })
     });
-    var obj = unionDifference(vector_sr,features,sty,format,lastol_uid);
+    var obj = unionDifference(vector_sr,features,featureStack,sty,format,lastol_uid);
     var polygon = obj["polygon"];
     var count = obj["count"];
     if(count>0 && polygon!=null){  
