@@ -27,6 +27,64 @@ var saveJson = {
   "outputCombine":{}
 };
 
+
+// create interactions for the vector layer and create styles for interactions
+function createInteraction(){
+
+  styleAdd = new ol.style.Style({ //Create style for add interaction
+      fill: new ol.style.Fill({
+        color: 'rgba(0, 255, 0, 0.1)',
+      }),
+      stroke: new ol.style.Stroke({
+        color: '#28a745',
+        width: 3,
+      }),
+      image: new ol.style.Circle({
+            radius: 7,
+            fill: new ol.style.Fill({
+              color: '#28a745'
+            }),
+            stroke: new ol.style.Stroke({
+              color: 'white',
+              width: 2,
+            }),
+      })
+  });
+
+  styleErase = new  ol.style.Style({ //Create style for erase interaction
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 170, 70, 0.1)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#f0ad4e',
+      width: 3,
+    }),
+    image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({
+            color: '#f0ad4e'
+          }),
+          stroke: new ol.style.Stroke({
+            color: 'white',
+            width: 2,
+          }),
+    })
+  });
+
+  addPolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for add
+      source: vector.getSource(),
+      type: "Polygon",
+      style: styleAdd,
+  });
+    
+  erasePolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for erase
+      source: vector.getSource(),
+      type: "Polygon",
+      style: styleErase,
+  });
+}
+
+
 //Function to initalize map and layers
 function mapInit(imgWidth,imgHeight,zoomifyUrl){
     
@@ -59,62 +117,6 @@ function mapInit(imgWidth,imgHeight,zoomifyUrl){
 
 }
 
-// create interactions for the vector layer and create styles for interactions
-function createInteraction(){
-
-    styleAdd = new ol.style.Style({ //Create style for add interaction
-        fill: new ol.style.Fill({
-          color: 'rgba(0, 255, 0, 0.1)',
-        }),
-        stroke: new ol.style.Stroke({
-          color: '#28a745',
-          width: 3,
-        }),
-        image: new ol.style.Circle({
-              radius: 7,
-              fill: new ol.style.Fill({
-                color: '#28a745'
-              }),
-              stroke: new ol.style.Stroke({
-                color: 'white',
-                width: 2,
-              }),
-        })
-    });
-  
-    styleErase = new  ol.style.Style({ //Create style for erase interaction
-      fill: new ol.style.Fill({
-        color: 'rgba(255, 170, 70, 0.1)',
-      }),
-      stroke: new ol.style.Stroke({
-        color: '#f0ad4e',
-        width: 3,
-      }),
-      image: new ol.style.Circle({
-            radius: 7,
-            fill: new ol.style.Fill({
-              color: '#f0ad4e'
-            }),
-            stroke: new ol.style.Stroke({
-              color: 'white',
-              width: 2,
-            }),
-      })
-    });
-
-    addPolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for add
-        source: vector.getSource(),
-        type: "Polygon",
-        style: styleAdd,
-    });
-      
-    erasePolygonInteraction = new ol.interaction.Draw({ //create polygon interaction for erase
-        source: vector.getSource(),
-        type: "Polygon",
-        style: styleErase,
-    });
-}
-
 //add interactions to the map
 function addInteractions(){
 
@@ -130,22 +132,17 @@ function addListener(){
     vector.on("prerender",function(event){
         var vector_sr = vector.getSource();
         var features = vector_sr.getFeatures();
-        var f = [];
-        console.log("yup",features[features.length-1].ol_uid,lastol_uid,features[features.length-1].ol_uid>lastol_uid,parseInt(features[features.length-1].ol_uid)>lastol_uid == false,features );
+        var bugFeature = [];
         if(parseInt(features[features.length-1].ol_uid)>lastol_uid == true)
-        {   console.log("inside")
+        { 
             if(erasePolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null ){ //check if style is already set
-                  console.log("eraseeeee",features[features.length - 1].getStyle(),features[features.length - 1].getStyle())
                   features[features.length -1].setStyle(styleErase);
                   features[features.length -1].set("name","erase");
                   featureStack.push(features[features.length -1]);
                   var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
                   saveJson["userActions"].push(temp);   
-                  console.log("erase",features[features.length -1]);
                   lastol_uid = parseInt(features[features.length -1].ol_uid);
-                  last_size = last_size+1;
-                  
-                  
+                  last_size = last_size+1;    
             }
             else if(addPolygonInteraction.getActive() == true && features[features.length - 1].getStyle() == null){//check if style is already set
                   features[features.length -1].setStyle(styleAdd);
@@ -154,49 +151,39 @@ function addListener(){
                   var temp = {"action":"Add","geoJson":JSON.parse(format.writeFeatures([features[features.length -1]]))}
                   saveJson["userActions"].push(temp);
                   lastol_uid = parseInt(features[features.length -1].ol_uid);
-                  last_size = last_size+1;
-                  
+                  last_size = last_size+1;     
             }
         }
-        else if(features.length > last_size){
-          console.log("tii");
-          console.log(featureStack,"before");
-          for(var i =0;i<features.length;i++){
-            if(parseInt(features[i].ol_uid)>lastol_uid){
-                  features[i].setStyle(styleErase);
-                  features[i].set("name","erase");
-                  f = features[i];
-                  var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([features[i]]))}
-                  saveJson["userActions"].push(temp);   
-                  console.log("erase",features[i]);
-                  
-                  vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));
-                  
+        else if(features.length > last_size){ // the feature in vector source are not ordered due to last feature added to vector.
+            
+            var flag = 0;
+            for(var i =0;i<features.length;i++){
+              if(parseInt(features[i].ol_uid)>lastol_uid){//get the feature which caused disorder in vector source
+                    bugFeature = features[i];
+                    
+                    flag = 1;
+                    vector_sr.removeFeature(vector_sr.getFeatureByUid(features[i].ol_uid));      
+              } 
             }
-            
-          }
-            
-          vector_sr.clear();
-          console.log(featureStack,"after");
-          vector_sr.addFeatures(featureStack);
-          console.log(vector_sr.getFeatures(),"before adding in vec");
-          console.log(f,"see this")
+            if(flag == 1){
+              if(addPolygonInteraction.getActive() == true){
+                bugFeature.setStyle(styleAdd);
+                bugFeature.set("name","add");
+              }
+              else{
+                bugFeature.setStyle(styleErase);
+                bugFeature.set("name","erase");
+              }
+              vector_sr.addFeature(bugFeature);
+              featureStack.push(bugFeature);
+              var temp = {"action":"Erase","geoJson":JSON.parse(format.writeFeatures([bugFeature]))}
+              saveJson["userActions"].push(temp);
+              last_size = last_size+1;
+              lastol_uid = parseInt(bugFeature.ol_uid);
+            }
           
-          f.setStyle(styleErase);
-          f.set("name","erase");
-          console.log("new",f);
-          
-          vector_sr.addFeature(f);
-          featureStack.push(f);
-
-          console.log(vector_sr.getFeatures(),"after adding in vec");
-          last_size = last_size+1;
-          lastol_uid = parseInt(featureNew.ol_uid);
-
-        }
-        
-    });
-   
+        }     
+    });  
 }
 
 //function to combine the polygons and convert features to json for downloading
@@ -272,7 +259,7 @@ function combinePolygon(){
         width: 3,
       })
     });
-    var obj = unionDifference(vector_sr,features,featureStack,sty,format,lastol_uid);
+    var obj = unionDifference(vector_sr,featureStack,format);
     var polygon = obj["polygon"];
     var count = obj["count"];
     if(count>0 && polygon!=null){  

@@ -25,15 +25,13 @@ function differnce(vector_sr,uid,polygon,turfpoly){
 }
 
 //Funtion to union and difference all the features and return a single multipolygon
-function unionDifference(vector_sr,features,featureStack,sty,format,lastid){
+function unionDifference(vector_sr,features,format){
 
     var turfpoly;
     var polygon;
     var count = 0;
-    var last = 0;
-    features = featureStack;
+    
     for(var i = 0;i<features.length;i++){
-        console.log("index",i,features[i]);
         turfpoly = format.writeFeatureObject(features[i]);
         if(count>0){
             if(features[i].get('name')=="add"){
@@ -54,8 +52,8 @@ function unionDifference(vector_sr,features,featureStack,sty,format,lastid){
     }
 
     return {
-      "polygon":polygon,
-      "count" : count
-    }  
+            "polygon":polygon,
+            "count" : count
+          }  
 }
 
